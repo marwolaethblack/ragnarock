@@ -47,18 +47,18 @@ class SampleSelector extends Component {
   };
 
   onChange = (event) => {
-    const {id, onChange} = this.props;
-    onChange(id, event.target.value);
+    const {id, onChange, group} = this.props;
+    onChange(id, event.target.value, group);
     this.close();
   };
 
   render() {
-    const {current} = this.props;
+    const {current, group} = this.props;
     const {open} = this.state;
     if (open) {
       return (
         <select autoFocus value={current} onChange={this.onChange} onBlur={this.close}>{
-          samples.map((sample, i) => {
+          samples[group].map((sample, i) => {
             return <option key={i}>{sample}</option>;
           })
         }</select>
@@ -78,6 +78,7 @@ function TrackListView({
   muteTrack,
   clearTrack,
   deleteTrack,
+  addTrack,
   hidden
 }) {
   return (
@@ -85,9 +86,11 @@ function TrackListView({
       Object.keys(tracks).map((group) => {
         return tracks[group].map((track,i) => {
           return (
+            <div>
+            {i === 0 &&  <h1>{group}</h1>}
             <tr key={i}className="track">
               <th>
-                <SampleSelector id={track.id} current={track.name} onChange={updateTrackSample} />
+                <SampleSelector id={track.id} group={group} current={track.name} onChange={updateTrackSample} />
               </th>
               <td className="vol">
                 <Slider min={0} max={1} step={.1} value={track.vol}
@@ -122,23 +125,28 @@ function TrackListView({
                 }}><Icon name="delete_forever"/></a>
               </td>
             </tr>
-          );
-        }) 
+            {i === tracks[group].length-1 &&  
+              <FABButton mini colored onClick={() => addTrack(group)} title="Add new track">
+                <Icon name="add" />
+              </FABButton>}
+          </div>
+          )
+      }); 
       })
     }</tbody>
   );
 }
 
-function Controls({bpm, updateBPM, playing, start, stop, addTrack, share, hidden}) {
+function Controls({bpm, updateBPM, playing, start, stop, category, share, hidden}) {
   const onChange = event => updateBPM(parseInt(event.target.value, 10));
   return (
     <tfoot className="controls">
       <tr>
-        <td style={{textAlign: "right"}} className={hidden}>
-          <FABButton mini colored onClick={addTrack} title="Add new track">
+        {/* <td style={{textAlign: "right"}} className={hidden}>
+          <FABButton mini colored category={category} onClick={addTrack} title="Add new track">
             <Icon name="add" />
           </FABButton>
-        </td>
+        </td> */}
         <td />
         <td className={hidden === "hidden" ? "share-play" : ""}>
           <FABButton  mini colored onClick={playing ? stop : start}>
@@ -252,9 +260,9 @@ class App extends Component {
     this.setState({tracks: newTracks});
   };
 
-  addTrack = () => {
+  addTrack = (category) => {
     const {tracks} = this.state;
-    this.updateTracks(model.addTrack(tracks));
+    this.updateTracks(model.addTrack(tracks, category));
   };
 
   clearTrack = (id: number, group) => {
@@ -313,6 +321,9 @@ class App extends Component {
   };
 
   render() {
+    const {bpm, currentBeat, playing, shareHash, tracks} = this.state;
+    const {updateBPM, start, stop, addTrack, share, randomSong, closeDialog} = this;
+    const hidden= this.state.shared ? 'hidden' : "";
 
     let authors = null;
     if (this.state.author) {
@@ -327,10 +338,7 @@ class App extends Component {
           } 
         </div>)
     }
-
-    const {bpm, currentBeat, playing, shareHash, tracks} = this.state;
-    const {updateBPM, start, stop, addTrack, share, randomSong, closeDialog} = this;
-    const hidden= this.state.shared ? 'hidden' : "";
+    
     return (
       <div className="app">
         <h3>Ragnarock</h3>
@@ -355,7 +363,8 @@ class App extends Component {
             muteTrack={this.muteTrack}
             randomSong={this.randomSong}
             clearTrack={this.clearTrack}
-            deleteTrack={this.deleteTrack} />
+            deleteTrack={this.deleteTrack} 
+            addTrack={addTrack}/>
           <Controls {...{bpm, updateBPM, playing, start, stop, addTrack, share, hidden}} />
         </table>
       </div>
