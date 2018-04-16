@@ -308,6 +308,7 @@ class App extends Component {
   };
 
   render() {
+    console.log(this.props.location.state);
     const {bpm, currentBeat, playing, shareHash, tracks} = this.state;
     const {updateBPM, start, stop, addTrack, share, randomSong, closeDialog} = this;
     const hidden= this.state.shared ? 'hidden' : "";
