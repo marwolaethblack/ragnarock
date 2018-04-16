@@ -82,46 +82,48 @@ function TrackListView({
 }) {
   return (
     <tbody className={hidden}>{
-      tracks.map((track, i) => {
-        return (
-          <tr key={i}className="track">
-            <th>
-              <SampleSelector id={track.id} current={track.name} onChange={updateTrackSample} />
-            </th>
-            <td className="vol">
-              <Slider min={0} max={1} step={.1} value={track.vol}
-                onChange={event => setTrackVolume(track.id, parseFloat(event.target.value))} />
-            </td>
-            <td className="mute">
-              <Switch defaultChecked={!track.muted} onChange={event => muteTrack(track.id)} />
-            </td>
-            {
-              track.beats.map((v, beat) => {
-                const beatClass = v ? "active" : beat === currentBeat ? "current" : "";
-                return (
-                  <td key={beat} className={`beat ${beatClass}`}>
-                    <a href="" onClick={(event) => {
-                      event.preventDefault();
-                      toggleTrackBeat(track.id, beat);
-                    }} />
-                  </td>
-                );
-              })
-            }
-            <td>
-              {track.beats.some(v => v) ?
-                <a href="" title="Clear track" onClick={event => {
+      Object.keys(tracks).map((group) => {
+        return tracks[group].map((track,i) => {
+          return (
+            <tr key={i}className="track">
+              <th>
+                <SampleSelector id={track.id} current={track.name} onChange={updateTrackSample} />
+              </th>
+              <td className="vol">
+                <Slider min={0} max={1} step={.1} value={track.vol}
+                  onChange={event => setTrackVolume(track.id, parseFloat(event.target.value), group)} />
+              </td>
+              <td className="mute">
+                <Switch defaultChecked={!track.muted} onChange={event => muteTrack(track.id, group)} />
+              </td>
+              {
+                track.beats.map((v, beat) => {
+                  const beatClass = v ? "active" : beat === currentBeat ? "current" : "";
+                  return (
+                    <td key={beat} className={`beat ${beatClass}`}>
+                      <a href="" onClick={(event) => {
+                        event.preventDefault();
+                        toggleTrackBeat(track.id, beat, group);
+                      }} />
+                    </td>
+                  );
+                })
+              }
+              <td>
+                {track.beats.some(v => v) ?
+                  <a href="" title="Clear track" onClick={event => {
+                    event.preventDefault();
+                    clearTrack(track.id, group);
+                  }}><Icon name="delete"/></a> :
+                  <Icon className="disabled-icon" name="delete"/>}
+                <a href="" title="Delete track" onClick={event => {
                   event.preventDefault();
-                  clearTrack(track.id);
-                }}><Icon name="delete"/></a> :
-                <Icon className="disabled-icon" name="delete"/>}
-              <a href="" title="Delete track" onClick={event => {
-                event.preventDefault();
-                deleteTrack(track.id);
-              }}><Icon name="delete_forever"/></a>
-            </td>
-          </tr>
-        );
+                  deleteTrack(track.id, group);
+                }}><Icon name="delete_forever"/></a>
+              </td>
+            </tr>
+          );
+        }) 
       })
     }</tbody>
   );
@@ -186,7 +188,7 @@ class App extends Component {
     bpm: number,
     currentBeat: number,
     playing: boolean,
-    tracks: Track[],
+    tracks: {},
     shareHash: ?string,
     shared: false
   };
@@ -217,7 +219,7 @@ class App extends Component {
     }
   }
 
-  initializeState(state: {bpm?: number, tracks: Track[]}) {
+  initializeState(state: {bpm?: number, tracks: Object}) {
     this.state = {
       bpm: 120,
       playing: false,
@@ -253,29 +255,29 @@ class App extends Component {
     this.updateTracks(model.addTrack(tracks));
   };
 
-  clearTrack = (id: number) => {
+  clearTrack = (id: number, group) => {
     const {tracks} = this.state;
-    this.updateTracks(model.clearTrack(tracks, id));
+    this.updateTracks(model.clearTrack(tracks, id, group));
   };
 
-  deleteTrack = (id: number) => {
+  deleteTrack = (id: number, group) => {
     const {tracks} = this.state;
-    this.updateTracks(model.deleteTracks(tracks, id));
+    this.updateTracks(model.deleteTracks(tracks, id, group));
   };
 
-  toggleTrackBeat = (id: number, beat: number) => {
+  toggleTrackBeat = (id: number, beat: number, group) => {
     const {tracks} = this.state;
-    this.updateTracks(model.toggleTrackBeat(tracks, id, beat));
+    this.updateTracks(model.toggleTrackBeat(tracks, id, beat, group));
   };
 
-  setTrackVolume = (id: number, vol: number) => {
+  setTrackVolume = (id: number, vol: number, category) => {
     const {tracks} = this.state;
-    this.updateTracks(model.setTrackVolume(tracks, id, vol));
+    this.updateTracks(model.setTrackVolume(tracks, id, vol, category));
   };
 
-  muteTrack = (id: number) => {
+  muteTrack = (id: number, group) => {
     const {tracks} = this.state;
-    this.updateTracks(model.muteTrack(tracks, id));
+    this.updateTracks(model.muteTrack(tracks, id, group));
   };
 
   updateBPM = (newBpm: number) => {
@@ -283,9 +285,9 @@ class App extends Component {
     this.setState({bpm: newBpm});
   };
 
-  updateTrackSample = (id: number, sample: string) => {
+  updateTrackSample = (id: number, sample: string, group) => {
     const {tracks} = this.state;
-    this.updateTracks(model.updateTrackSample(tracks, id, sample));
+    this.updateTracks(model.updateTrackSample(tracks, id, sample, group));
   };
 
   closeDialog = () => {
