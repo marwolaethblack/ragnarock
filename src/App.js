@@ -198,13 +198,15 @@ class App extends Component {
     const hash = location.hash.substr(1);
     if (hash.length > 0) {
       try {
-        const {bpm, tracks}: {
+        const {bpm, tracks, author}: {
           bpm: number,
           tracks: EncodedTrack[],
+          author: Object
         } = JSON.parse(atob(hash));
         this.initializeState({
           bpm,
           tracks: model.decodeTracks(tracks),
+          author,
           shared: true
         });
         
@@ -305,18 +307,34 @@ class App extends Component {
     const shareHash = btoa(JSON.stringify({
       bpm,
       tracks: model.encodeTracks(tracks),
+      author: this.props.location.state
     }));
     this.setState({shareHash});
   };
 
   render() {
-    console.log(this.props.location.state);
+
+    let authors = null;
+    if (this.state.author) {
+      const { bandName, members } = this.state.author;
+      authors = 
+        (<div>
+          <h4>{bandName}</h4>
+          {
+             members.map(m => (
+              <p>{m}</p>
+            ))
+          } 
+        </div>)
+    }
+
     const {bpm, currentBeat, playing, shareHash, tracks} = this.state;
     const {updateBPM, start, stop, addTrack, share, randomSong, closeDialog} = this;
     const hidden= this.state.shared ? 'hidden' : "";
     return (
       <div className="app">
-        <h3>tinysynth</h3>
+        <h3>Ragnarock</h3>
+        {authors}
         {shareHash ?
           <ShareDialog hash={shareHash} closeDialog={closeDialog} /> : null}
         <table>
